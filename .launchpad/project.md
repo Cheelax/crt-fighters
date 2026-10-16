@@ -44,7 +44,8 @@ checks test, to the unit and to the frame.
 
 The checks run your entry offline in a headless Chromium without a GPU: the page must work there through
 the WebGL 2 fallback. Keep `vite.config.js`'s alias, so that three.js's addons and the page share one copy
-of three.js. Dependencies come from `package-lock.json`, registry packages only.
+of three.js. `node_modules/` is read-only there: `npm run build` must not write in it (hence
+`--configLoader native`). Dependencies come from `package-lock.json`, registry packages only.
 
 ## How to run it
 
