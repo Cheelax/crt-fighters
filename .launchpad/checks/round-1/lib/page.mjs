@@ -44,7 +44,7 @@ const FAKE_PADS = () => {
 const result = { errors: [], model: null };
 const browser = await chromium.launch({
   headless: true,
-  args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-unsafe-webgpu"],
+  args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
 });
 try {
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
