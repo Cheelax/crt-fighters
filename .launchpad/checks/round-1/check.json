@@ -1,0 +1,21 @@
+{
+  "name": "round 1: the fight",
+  "run": "node .launchpad/checks/round-1/run.mjs",
+  "timeoutSeconds": 600,
+  "tests": [
+    "an empty fight prints the starting state: no winner, 100 hp each, player 1 at -150 and player 2 at 150",
+    "walking moves 3 units forward and 2 back per frame, within the stage and never closer than 60",
+    "a left punch in range hits on its 7th frame for 5 damage, and only once",
+    "an attack hits only within its range: at 123 units a middle kick misses and a high kick hits",
+    "holding back blocks high and mid attacks for no damage, but low kicks still hit",
+    "a hit cancels the defender's attack: it does no damage",
+    "a knockout ends the round, and the next round starts after the 90-frame pause at full hp",
+    "the first fighter to win 2 rounds wins the match, and later frames change nothing",
+    "after 3600 frames the round ends by time, won by the fighter with more hp",
+    "the same inputs print the same bytes",
+    "refuses bad input files with exit code 2, a reason on stderr and nothing on stdout",
+    "the built page loads offline with no error, loads the model and reports ready with webgpu or webgl2",
+    "the keyboard walks player 1 forward with KeyD and player 2 forward with ArrowLeft",
+    "gamepads walk the players: player 1 with the stick of gamepad 0, player 2 with the d-pad of gamepad 1"
+  ]
+}
