@@ -241,9 +241,9 @@ try {
     const seen = await page("keyboard");
     eq(seen.errors, [], "uncaught page errors");
     const [x1, x2] = [at(seen.start, "p1"), at(seen.start, "p2")];
-    check(at(seen.afterP1, "p1") >= x1 + 30, `player 1 at ${x1}, then at ${at(seen.afterP1, "p1")} after holding KeyD for 0.8 s`);
+    check(at(seen.afterP1, "p1") >= x1 + 30, `player 1 at ${x1}, then at ${at(seen.afterP1, "p1")} after holding KeyD for 40 engine frames`);
     eq(at(seen.afterP1, "p2"), x2, "player 2's position while player 1 walks");
-    check(at(seen.afterP2, "p2") <= x2 - 30, `player 2 at ${x2}, then at ${at(seen.afterP2, "p2")} after holding ArrowLeft for 0.8 s`);
+    check(at(seen.afterP2, "p2") <= x2 - 30, `player 2 at ${x2}, then at ${at(seen.afterP2, "p2")} after holding ArrowLeft for 40 engine frames`);
     check(seen.afterP2.fight.frame > seen.start.fight.frame, "window.__crt.fight.frame did not advance");
   });
 
@@ -251,8 +251,8 @@ try {
     const seen = await page("gamepad");
     eq(seen.errors, [], "uncaught page errors");
     const [x1, x2] = [at(seen.connected, "p1"), at(seen.connected, "p2")];
-    check(at(seen.afterP1, "p1") >= x1 + 30, `player 1 at ${x1}, then at ${at(seen.afterP1, "p1")} after gamepad 0's stick held right for 0.8 s`);
-    check(at(seen.afterP2, "p2") <= x2 - 30, `player 2 at ${x2}, then at ${at(seen.afterP2, "p2")} after gamepad 1's d-pad held left (button 14) for 0.8 s`);
+    check(at(seen.afterP1, "p1") >= x1 + 30, `player 1 at ${x1}, then at ${at(seen.afterP1, "p1")} after gamepad 0's stick held right for 40 engine frames`);
+    check(at(seen.afterP2, "p2") <= x2 - 30, `player 2 at ${x2}, then at ${at(seen.afterP2, "p2")} after gamepad 1's d-pad held left (button 14) for 40 engine frames`);
   });
 } finally {
   server?.http.close();

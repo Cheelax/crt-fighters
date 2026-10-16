@@ -60,14 +60,21 @@ try {
     result.notReady = true;
   }
   const crt = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__crt ?? null)));
+  // Holds an input for HOLD_FRAMES engine frames (or 20 s at most): software rendering can stall the page
+  // for seconds, and an input released before the engine reads it would test nothing.
+  const HOLD_FRAMES = 40;
+  const hold = async () => {
+    const from = (await crt())?.fight?.frame ?? 0;
+    await page.waitForFunction((n) => (window.__crt?.fight?.frame ?? 0) >= n, from + HOLD_FRAMES, { timeout: 20_000, polling: 50 }).catch(() => {});
+  };
   result.start = await crt();
   if (!result.notReady && scenario === "keyboard") {
     await page.keyboard.down("KeyD");
-    await page.waitForTimeout(800);
+    await hold();
     await page.keyboard.up("KeyD");
     result.afterP1 = await crt();
     await page.keyboard.down("ArrowLeft");
-    await page.waitForTimeout(800);
+    await hold();
     await page.keyboard.up("ArrowLeft");
     result.afterP2 = await crt();
   }
@@ -76,11 +83,11 @@ try {
     await page.waitForTimeout(200);
     result.connected = await crt();
     await page.evaluate(() => { window.__fakePads[0].axes[0] = 1; });
-    await page.waitForTimeout(800);
+    await hold();
     await page.evaluate(() => { window.__fakePads[0].axes[0] = 0; });
     result.afterP1 = await crt();
     await page.evaluate(() => { window.__fakePads[1].buttons = [14]; });
-    await page.waitForTimeout(800);
+    await hold();
     await page.evaluate(() => { window.__fakePads[1].buttons = []; });
     result.afterP2 = await crt();
   }
