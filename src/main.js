@@ -15,6 +15,7 @@ import { Fighter, UNIT } from "./scene/fighter.js";
 import { poseOf } from "./scene/pose.js";
 import { createCamera, createStage } from "./scene/stage.js";
 import { createHud } from "./ui/hud.js";
+import "./ui/hud.css";
 import { createSound } from "./ui/sound.js";
 
 const STEP_MS = 1000 / FPS;

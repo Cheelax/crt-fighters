@@ -8,6 +8,7 @@ import { padButtons } from "../src/input/gamepad.js";
 import { createControls } from "../src/input/index.js";
 import { MOVE_CLIPS, moveClipTime } from "../src/scene/clips.js";
 import { poseOf } from "../src/scene/pose.js";
+import { bannerOf, curtainOf } from "../src/ui/hud.js";
 
 const pad = (axes0, buttons = []) => ({ axes: [axes0, 0, 0, 0], buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: buttons.includes(i) })) });
 
@@ -62,6 +63,21 @@ test("each move's clip shows its strike at the range on the move's first active 
       last = moveClipTime(key, f);
     }
   }
+});
+
+test("the HUD's banner and curtain follow the rounds", () => {
+  let s = createFight();
+  for (let i = 0; i < 10; i++) s = step(s, {});
+  assert.deepEqual(bannerOf(s, 0), ["Round 1", ""]);
+  for (let i = 0; i < 3590; i++) s = step(s, {});
+  assert.deepEqual(bannerOf(s, 0), ["Time", "Round 1: no winner"]);
+  assert.equal(curtainOf(s), 0);
+  for (let i = 0; i < 90; i++) s = step(s, {});
+  assert.equal(curtainOf(s), 1, "closed on the pause's last frame");
+  s = step(s, {});
+  assert.ok(curtainOf(s) > 0.9 && curtainOf(s) < 1, "opening on the next round's first frame");
+  for (let i = 0; i < 3599; i++) s = step(s, {});
+  assert.deepEqual([s.over, bannerOf(s, 0)[0], bannerOf(s, 60)[0]], [true, "Time", "Draw game"]);
 });
 
 test("poses follow the engine: walking, a move, a hit, then the knockout and the victory", () => {

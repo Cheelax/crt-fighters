@@ -1,7 +1,6 @@
 // The HUD, in the page over the canvas: both hp bars, the round wins, the clock, and what just happened.
 // It reads the engine's state; it never changes it.
 import { FPS, MAX_HP, ROUND_FRAMES, ROUNDS_TO_WIN } from "../engine/rules.mjs";
-import "./hud.css";
 
 const NAMES = { p1: "Player 1", p2: "Player 2" };
 

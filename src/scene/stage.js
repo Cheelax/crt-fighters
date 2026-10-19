@@ -167,6 +167,7 @@ export function createCamera() {
   const rig = {
     camera,
     jolt(s) {
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
       shake = 0.18;
       strength = Math.max(strength, s);
     },

@@ -45,6 +45,7 @@ export class Fighter {
       }
     });
     this.flashLeft = 0;
+    this.glowing = false;
     this.recoil = 0;
     this.root.add(shadow());
     this.guard = guardShield(player);

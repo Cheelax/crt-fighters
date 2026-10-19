@@ -31,8 +31,11 @@ The controls, the engine's rules and the simulator's formats are in [ARCHITECTUR
 | high kick | `D` + `K` | `←` + numpad `2` | towards the opponent + B |
 | block (high and mid) | hold `A` | hold `→` | away from the opponent |
 
-Gamepad 1 plays player 1 and gamepad 2 player 2, alongside the keyboard. Once a match is over, `Enter`,
-`Space` or a gamepad's Start starts the next one.
+Gamepad 1 plays player 1 and gamepad 2 player 2, alongside the keyboard; gamepads rumble on hits. An
+attack pressed while the fighter is still busy (recovering, stunned) is kept for it for 8 frames, so a
+tap is never lost. `M` mutes the sound (it starts with the first key pressed, as browsers require). Once
+a match is over, `Enter`, `Space` or a gamepad's Start starts the next one. The renderer in use and the
+frame rate are under the clock.
 
 ## The code
 
@@ -40,14 +43,21 @@ Gamepad 1 plays player 1 and gamepad 2 player 2, alongside the keyboard. Once a 
 src/engine/rules.mjs     the fixed numbers and moves (given)
 src/engine/fight.mjs     the engine: createFight() and step(state, inputs), the six steps of a frame in order
 src/engine/replay.mjs    input files: checked whole, then replayed (bin/simulate.mjs does the reading and printing)
-src/input/               the keyboard and the gamepads, turned into the engine's buttons
+src/input/               the keyboard and the gamepads, turned into the engine's buttons (index.js: the buffer)
 src/scene/pose.js        what each model shows, read from the engine's state alone
 src/scene/clips.js       where each clip's strike, reaction and walk sit, against the engine's frames
 src/scene/               the fighters (fighter.js), the arena and camera (stage.js), the hit bursts (effects.js)
-src/ui/hud.js            the hp bars, round wins, clock and banners
+src/ui/                  the hp bars, round wins, clock and banners (hud.js); the sounds, synthesized (sound.js)
 src/main.js              the loop: 60 engine steps a second, inputs read each step, then one render
 src/dev.js               npm run dev only: __dev.measureClips(), __dev.play(frames)
+test/                    npm test: node's test runner, no browser
 ```
+
+The page never decides anything: hits, blocks, knockouts and positions all come from `step()`. What it
+adds is only seen and heard: the bursts, the struck fighter's flash and jolt (its model, not its
+position), the guard of light in front of a blocking fighter, the camera closing in on a knockout, the
+curtain that hides the fighters' return to their marks between rounds, and, with WebGPU, a bloom on the
+neon, the screens and the bursts. The WebGL 2 fallback draws the same scene without the bloom.
 
 **In sync with the engine.** A move's clip is not played at its own speed: its time is computed from the
 move's frame (`moveClipTime` in `src/scene/clips.js`). The wind-up fills the startup frames, the limb
@@ -68,7 +78,9 @@ punches' and kicks' reach matches the engine's ranges).
 - the simulator prints its JSON on one line; it refuses a button written twice (`lp+lp`), an empty one
   (`lp+`) and a `p1` or `p2` that is not a string, with the frame and the reason;
 - the page renders at the display's rate and interpolates the positions between two engine frames; after
-  a stall it catches up at most 250 ms of engine frames, then slows down rather than jump.
+  a stall it catches up at most 250 ms of engine frames, then slows down rather than jump;
+- there is no blocking clip in the model: a blocked blow plays the first part of the head's reaction,
+  smaller, with the guard lit.
 
 ## How it is built
 
