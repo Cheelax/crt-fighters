@@ -9,14 +9,12 @@ export const PLAYERS = ["p1", "p2"];
 const OTHER = { p1: "p2", p2: "p1" };
 /** +1 when `forward` is +x (player 1, always on the left), -1 when it is -x (player 2). */
 const FACING = { p1: 1, p2: -1 };
-/** The attack buttons in the order they win when a page holds several at once (a file never does). */
-const ATTACKS = ATTACK_BUTTONS;
 
 /**
  * A fighter at the start of a round. `move` is the move it is doing ({ key, frame, hit }: `frame` counts
- * from 0 on the frame it started), `stun` the frames it still cannot act, `stunBy` what caused them
- * ("hit" or "block"). `walk` (+1 forward, -1 back, 0) and `blocking` say what it did on the last frame:
- * the page animates them.
+ * from 0 on the frame it started), `stun` the frames it still cannot act and `stunBy` what caused them
+ * ({ type: "hit" or "block", move }). `walk` (+1 forward, -1 back, 0) and `blocking` say what it did on
+ * the last frame: the page animates them.
  */
 function fighter(player) {
   return { hp: MAX_HP, x: FACING[player] * -START_X, move: null, stun: 0, stunBy: null, walk: 0, blocking: false };
@@ -45,7 +43,8 @@ export const isFree = (f) => f.move === null && f.stun === 0;
 
 /** The move `buttons` start, or null: `rk` while holding `forward` is the high kick. */
 export function moveOf(buttons) {
-  const attack = ATTACKS.find((b) => buttons?.[b]);
+  // A page may hold several attack buttons at once (an input file never does): the first in ATTACK_BUTTONS wins.
+  const attack = ATTACK_BUTTONS.find((b) => buttons?.[b]);
   if (!attack) return null;
   return attack === "rk" && buttons.forward ? "forward+rk" : attack;
 }
@@ -128,11 +127,11 @@ export function step(state, inputs) {
     const blocked = them.blocking && move.height !== "low";
     if (blocked) {
       them.stun = move.blockstun;
-      them.stunBy = "block";
+      them.stunBy = { type: "block", move: key };
     } else {
       them.hp = Math.max(0, them.hp - move.damage);
       them.stun = move.hitstun;
-      them.stunBy = "hit";
+      them.stunBy = { type: "hit", move: key };
       them.move = null;
     }
     s.events.push({ frame: state.frame, type: blocked ? "block" : "hit", attacker, move: key, damage: blocked ? 0 : move.damage, blocked });
