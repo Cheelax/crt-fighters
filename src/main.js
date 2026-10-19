@@ -3,16 +3,17 @@
 // page feeds it inputs and shows its state.
 import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { createFight, step } from "./engine/fight.mjs";
+import { createFight, PLAYERS, step } from "./engine/fight.mjs";
 import { FPS } from "./engine/rules.mjs";
 import { createKeyboard } from "./input/keyboard.js";
 import { readPads } from "./input/gamepad.js";
-import { readInputs, wantsRematch } from "./input/index.js";
+import { createControls } from "./input/index.js";
 import { createEffects } from "./scene/effects.js";
 import { Fighter, UNIT } from "./scene/fighter.js";
 import { poseOf } from "./scene/pose.js";
 import { createCamera, createStage } from "./scene/stage.js";
 import { createHud } from "./ui/hud.js";
+import { createSound } from "./ui/sound.js";
 
 const STEP_MS = 1000 / FPS;
 /** After a stall (a hidden tab, a slow frame), the engine catches up at most this much, then slows. */
@@ -32,11 +33,17 @@ const webgpu = Boolean(renderer.backend.isWebGPUBackend);
 window.__crt.renderer = webgpu ? "webgpu" : "webgl2";
 renderer.setPixelRatio(webgpu ? Math.min(window.devicePixelRatio, 2) : 1);
 
-const scene = createStage();
+const stage = createStage();
+const scene = stage.scene;
 const rig = createCamera();
 const effects = createEffects(scene);
 const hud = createHud();
-const keyboard = createKeyboard();
+const sound = createSound();
+const controls = createControls(createKeyboard());
+window.addEventListener("gamepadconnected", (e) => {
+  const i = e.gamepad?.index;
+  if (i === 0 || i === 1) hud.toast(`Gamepad ${i + 1} connected: it plays player ${i + 1}`);
+});
 
 const resize = () => {
   rig.camera.aspect = window.innerWidth / window.innerHeight;
@@ -68,22 +75,35 @@ function publish() {
 }
 
 /** One engine frame: the inputs of this frame, the step, then what it changed on the stage. */
-function tick(inputs = readInputs(keyboard)) {
-  if (fight.over && fight.frame - endedAt >= FPS && wantsRematch(keyboard)) {
+function tick(inputs = controls.read()) {
+  if (fight.over && fight.frame - endedAt >= FPS && controls.rematch()) {
     fight = prev = createFight();
     endedAt = null;
   }
   prev = fight;
   fight = step(fight, inputs);
+  controls.settle(fight);
   if (fight.ended) endedAt ??= fight.frame;
   else endedAt = null;
+  react();
+  publish();
+}
+
+/** What the last step changed, seen and heard: swings, hits and blocks, a knockout, a new round. */
+function react() {
+  for (const p of PLAYERS) {
+    const move = fight[p].move;
+    if (move?.frame === 0) sound.swing(move.key.endsWith("k"));
+  }
   for (const e of fight.events) {
     const defender = OTHER[e.attacker];
     effects.burst(e, fight[defender].x * UNIT, e.attacker === "p1" ? 1 : -1);
-    if (!e.blocked) fighters[defender].flash();
+    fighters[defender].struck(e.damage, e.blocked);
     rig.jolt(e.blocked ? 0.015 : 0.015 + e.damage * 0.004);
+    sound.impact(e.damage, e.blocked);
   }
-  publish();
+  if (fight.ended && !prev.ended && fight.rounds.at(-1).reason === "ko") sound.knockout();
+  if (!fight.ended && (prev.ended || fight.frame === 1)) sound.bell();
 }
 
 let last = performance.now();
@@ -101,12 +121,13 @@ function frame() {
   const alpha = behind / STEP_MS;
   const sinceEnd = endedAt === null ? 0 : fight.frame - endedAt + alpha;
   const x = {};
-  for (const p of ["p1", "p2"]) {
+  for (const p of PLAYERS) {
     x[p] = prev[p].x + (fight[p].x - prev[p].x) * alpha;
     fighters[p].update(poseOf(fight, p, alpha, sinceEnd), x[p], dt / 1000);
   }
   rig.follow(x.p1 * UNIT, x.p2 * UNIT, dt / 1000);
   effects.update(dt / 1000);
+  stage.update(dt / 1000);
   hud.update(fight, sinceEnd);
   const pads = readPads();
   hud.devices({ p1: pads.p1 ? "keys + gamepad" : "keys", p2: pads.p2 ? "keys + gamepad" : "keys" });

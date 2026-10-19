@@ -1,5 +1,5 @@
-// The arena: the stage the engine's positions live on ([-400, 400] units), its lights, and the camera
-// that keeps both fighters in view from the side.
+// The arena: the stage the engine's positions live on ([-400, 400] units), its lights, the wall of
+// televisions behind it, and the camera that keeps both fighters in view from the side.
 import * as THREE from "three/webgpu";
 import { STAGE_HALF_WIDTH } from "../engine/rules.mjs";
 import { UNIT } from "./fighter.js";
@@ -58,33 +58,100 @@ export function createStage() {
     }
   }
 
-  scene.add(backdrop());
-  return scene;
+  const wall = backdrop();
+  scene.add(wall.group);
+  return { scene, update: wall.update };
 }
 
-/** A wall of old televisions behind the stage, their screens lit. */
+/**
+ * A wall of old televisions behind the stage, dim enough to leave the fighters in front: some off, some
+ * glowing a colour, some showing snow, and a neon sign across them. `update(dt)` makes the snow crawl.
+ */
 function backdrop() {
   const group = new THREE.Group();
   const cabinet = new THREE.MeshStandardMaterial({ color: 0x1b1822, roughness: 0.7 });
-  const colors = [0x35c8ff, 0xff3d8b, 0x8c5cff, 0x3ad6c8, 0xf2b134];
-  const screens = colors.map((c) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(0.22) }));
+  const snow = snowTexture();
+  const screens = [
+    new THREE.MeshBasicMaterial({ color: 0x0b0a12 }), // off
+    ...[0x35c8ff, 0xff3d8b, 0x8c5cff, 0x3ad6c8].map((c) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(0.18) })),
+    new THREE.MeshBasicMaterial({ map: snow, color: 0x5a5470 }),
+  ];
   const box = new THREE.BoxGeometry(1, 1, 1);
   const face = new THREE.PlaneGeometry(1, 1);
-  let n = 0;
-  for (let row = 0; row < 4; row++) {
-    for (let col = -7; col <= 7; col++) {
-      const w = 1.25 + ((col * 7 + row * 3) % 3) * 0.12;
+  for (let row = 0; row < 5; row++) {
+    for (let col = -8; col <= 8; col++) {
+      const hash = Math.abs((col * 73856093) ^ (row * 19349663)) % 97;
+      const w = 1.25 + (hash % 3) * 0.12;
       const tv = new THREE.Mesh(box, cabinet);
       tv.scale.set(w, 0.95, 0.9);
       tv.position.set(col * 1.45, 0.55 + row * 1.0, -6.5 - Math.abs(col) * 0.12);
       group.add(tv);
-      const screen = new THREE.Mesh(face, screens[n++ % screens.length]);
+      const screen = new THREE.Mesh(face, screens[hash % screens.length]);
       screen.scale.set(w * 0.78, 0.7, 1);
       screen.position.set(tv.position.x, tv.position.y + 0.02, tv.position.z + 0.451);
       group.add(screen);
     }
   }
-  return group;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 0.9), new THREE.MeshBasicMaterial({ map: signTexture(), transparent: true }));
+  sign.position.set(0, 2.2, -5.95);
+  group.add(sign);
+
+  let wait = 0;
+  return {
+    group,
+    update(dt) {
+      wait -= dt;
+      if (wait > 0) return;
+      wait = 0.07;
+      snow.offset.set(Math.random(), Math.random());
+    },
+  };
+}
+
+/** Grey snow, the picture of a television tuned to nothing. */
+function snowTexture() {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext("2d");
+  const image = g.createImageData(size, size);
+  for (let i = 0; i < size * size; i++) {
+    const v = Math.random() * 255;
+    image.data.set([v, v, v, 255], i * 4);
+  }
+  g.putImageData(image, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(0.5, 0.5);
+  texture.magFilter = THREE.NearestFilter;
+  return texture;
+}
+
+/** The game's name in neon tubes. */
+function signTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 192;
+  const g = canvas.getContext("2d");
+  g.fillStyle = "rgba(10, 8, 16, 0.85)";
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.font = "italic 900 118px 'Courier New', monospace";
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  for (const [color, blur] of [["#ff3d8b", 34], ["#ff3d8b", 14], ["#ffe6f1", 0]]) {
+    g.shadowColor = color;
+    g.shadowBlur = blur;
+    g.fillStyle = color;
+    g.fillText("CRT FIGHTERS", canvas.width / 2, canvas.height / 2 + 6);
+  }
+  g.strokeStyle = "#35c8ff";
+  g.lineWidth = 6;
+  g.shadowColor = "#35c8ff";
+  g.shadowBlur = 18;
+  g.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 /**

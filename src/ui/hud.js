@@ -30,12 +30,18 @@ export function createHud(root = document.body) {
   const sub = el("div", "sub");
   banner.append(title, sub);
   const help = el("div", "help");
-  help.innerHTML = "<b>Player 1</b> A D walk · U I J K attack · D+K high kick &nbsp;|&nbsp; <b>Player 2</b> ← → walk · Num 4 5 1 2 attack · ←+Num2 high kick &nbsp;|&nbsp; hold back to block · gamepads work too";
-  root.append(hud, banner, help);
+  help.innerHTML = "<b>Player 1</b> A D walk · U I J K attack · D+K high kick &nbsp;|&nbsp; <b>Player 2</b> ← → walk · Num 4 5 1 2 attack · ←+Num2 high kick &nbsp;|&nbsp; hold back to block · gamepads too · M mutes";
+  const toast = el("div", "toast");
+  const curtain = el("div", "curtain"); // hides the fighters' return to their marks between rounds
+  const crt = el("div", "crt"); // scanlines and a vignette over the whole picture
+  root.append(curtain, crt, hud, banner, help, toast);
+  let toastTimer = 0;
+  const devices = { p1: "", p2: "" };
 
   return {
     /** Shows `fight`; `sinceEnd` is the frames since the round ended, while it has. */
     update(fight, sinceEnd) {
+      curtain.style.opacity = String(curtainOf(fight));
       for (const p of ["p1", "p2"]) {
         const s = sides[p];
         const hp = fight[p].hp;
@@ -54,11 +60,29 @@ export function createHud(root = document.body) {
       if (sub.textContent !== s) sub.textContent = s;
       banner.classList.toggle("shown", t !== "");
     },
-    /** Which device each player last used: "keyboard" or "gamepad". */
+    /** What each player can play with, e.g. "keys + gamepad". */
     devices(d) {
-      for (const p of ["p1", "p2"]) sides[p].device.textContent = d[p];
+      for (const p of ["p1", "p2"]) {
+        if (devices[p] !== d[p]) sides[p].device.textContent = devices[p] = d[p];
+      }
+    },
+    /** A short note at the bottom of the screen. */
+    toast(text) {
+      toast.textContent = text;
+      toast.classList.add("shown");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("shown"), 2500);
     },
   };
+}
+
+const CURTAIN_FRAMES = 12;
+
+/** How dark the curtain is: it closes over the pause's last frames and opens on the next round's first. */
+export function curtainOf(fight) {
+  if (fight.ended && !fight.over && fight.pause < CURTAIN_FRAMES) return 1 - fight.pause / CURTAIN_FRAMES;
+  if (!fight.ended && fight.round > 1 && fight.clock < CURTAIN_FRAMES) return 1 - fight.clock / CURTAIN_FRAMES;
+  return 0;
 }
 
 /** The banner's two lines for this moment of the match. */

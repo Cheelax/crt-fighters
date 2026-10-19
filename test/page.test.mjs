@@ -5,6 +5,7 @@ import { createFight, step } from "../src/engine/fight.mjs";
 import { ANIMS, MOVES } from "../src/engine/rules.mjs";
 import { keyButtons } from "../src/input/keyboard.js";
 import { padButtons } from "../src/input/gamepad.js";
+import { createControls } from "../src/input/index.js";
 import { MOVE_CLIPS, moveClipTime } from "../src/scene/clips.js";
 import { poseOf } from "../src/scene/pose.js";
 
@@ -23,6 +24,30 @@ test("a gamepad's stick or d-pad towards the opponent is forward: right for play
   assert.equal(padButtons(pad(0, [14]), "p1").back, true);
   assert.deepEqual(padButtons(pad(0, [2, 1]), "p1"), { forward: false, back: false, lp: true, rp: false, lk: false, rk: true });
   assert.equal(padButtons(null, "p1").forward, false);
+});
+
+test("an attack tapped while the fighter is busy is kept for it up to 8 frames, then dropped", () => {
+  const keyboard = { down: new Set(), taps: new Set() };
+  const controls = createControls(keyboard);
+  const frame = (s) => {
+    const next = step(s, controls.read());
+    controls.settle(next);
+    return next;
+  };
+  let s = createFight();
+  keyboard.taps.add("KeyU"); // a tap released before the frame read it
+  s = frame(s);
+  assert.equal(s.p1.move?.key, "lp");
+  for (let i = 1; i < 12; i++) s = frame(s);
+  keyboard.taps.add("KeyI"); // on the punch's 12th frame: it ends after its 19th
+  for (let i = 12; i < 19; i++) s = frame(s);
+  assert.equal(s.p1.move?.key, "lp");
+  s = frame(s);
+  assert.deepEqual(s.p1.move, { key: "rp", frame: 0, hit: false }, "the right punch starts as soon as the fighter is free");
+  for (let i = 1; i < 5; i++) s = frame(s);
+  keyboard.taps.add("KeyJ"); // on the right punch's 5th frame: it ends after its 23rd, too late
+  for (let i = 5; i < 24; i++) s = frame(s);
+  assert.equal(s.p1.move, null);
 });
 
 test("each move's clip shows its strike at the range on the move's first active frame", () => {

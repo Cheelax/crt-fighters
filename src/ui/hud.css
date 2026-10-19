@@ -40,6 +40,19 @@
   text-shadow: 0 0 18px #ff3d8b, 0 0 42px #8c5cff, 4px 4px 0 #2a0f3a;
 }
 .banner .sub { margin-top: 6px; font-size: clamp(14px, 2vw, 20px); letter-spacing: 0.14em; color: #c9f4ff; text-shadow: 0 0 10px #35c8ff; }
+.curtain { position: fixed; inset: 0; background: #07060c; opacity: 0; pointer-events: none; }
+.crt {
+  position: fixed; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+}
+.toast {
+  position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); padding: 6px 14px; pointer-events: none;
+  font: 13px ui-monospace, monospace; color: #e8fbff; background: rgba(22, 18, 31, 0.85); border: 1px solid #35c8ff;
+  opacity: 0; transition: opacity 0.2s;
+}
+.toast.shown { opacity: 1; }
 .help {
   position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; pointer-events: none; font: 12px ui-monospace, monospace;
   color: rgba(220, 214, 245, 0.6);

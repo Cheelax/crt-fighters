@@ -62,6 +62,11 @@ function measureClips({ THREE, gltf, fighters }) {
     const rows = sample(r.clip, () => x(head));
     out.reactions[kind] = { clip: r.clip, peak: at(rows, (a, b) => a < b), curve: curve(rows) };
   }
+  for (const name of [ANIMS.ko, ANIMS.victory]) {
+    const hips = bone("Hips");
+    const rows = sample(name, () => hips.getWorldPosition(v).y * 100);
+    out.reactions[name] = { clip: name, lowest: at(rows, (a, b) => a < b), curve: curve(rows) };
+  }
   for (const [kind, w] of Object.entries({ ...WALKS, idle: { clip: ANIMS.idle } })) {
     const feet = [bone("LeftToeBase"), bone("RightToeBase")];
     const rows = sample(w.clip, () => feet.map(x));

@@ -1,7 +1,7 @@
 // What a fighter's model shows, read from the engine's state and nothing else: a clip, and for the clips
 // timed to the engine (moves, reactions, the end of a round) the time in it. No three.js here.
 import { ANIMS, FPS, MOVES } from "../engine/rules.mjs";
-import { moveClipTime, REACTIONS, WALKS } from "./clips.js";
+import { ENDS, moveClipTime, REACTIONS, WALKS } from "./clips.js";
 
 const lerp = (a, b, t) => a + (b - a) * Math.min(1, Math.max(0, t));
 
@@ -15,8 +15,8 @@ export function poseOf(fight, player, alpha = 0, sinceEnd = 0) {
   if (fight.ended) {
     const { winner, reason } = fight.rounds.at(-1);
     const seconds = sinceEnd / FPS;
-    if (reason === "ko" && me.hp === 0) return { clip: ANIMS.ko, time: seconds, fade: 0.1 };
-    if (winner === player) return { clip: ANIMS.victory, time: seconds, fade: 0.3 };
+    if (reason === "ko" && me.hp === 0) return { clip: ENDS.ko.clip, time: ENDS.ko.from + seconds, fade: 0.1 };
+    if (winner === player) return { clip: ENDS.victory.clip, time: ENDS.victory.from + seconds, fade: 0.3 };
     return { clip: ANIMS.idle, time: null, rate: 1, fade: 0.3 };
   }
   if (me.move) {

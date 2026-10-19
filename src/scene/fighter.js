@@ -45,6 +45,8 @@ export class Fighter {
       }
     });
     this.flashLeft = 0;
+    this.recoil = 0;
+    this.root.add(shadow());
 
     this.mixer = new THREE.AnimationMixer(this.model);
     this.actions = {};
@@ -75,6 +77,10 @@ export class Fighter {
     }
     this.mixer.update(dt);
 
+    // A struck fighter's model jolts back a few centimetres and eases in again: only the picture moves,
+    // never the engine's position.
+    this.recoil = Math.max(0, this.recoil - dt * RECOIL_EASE);
+    this.model.position.z = -this.recoil;
     if (this.flashLeft > 0 || this.glowing) {
       this.flashLeft = Math.max(0, this.flashLeft - dt);
       const glow = (this.flashLeft / FLASH_SECONDS) * 0.45;
@@ -83,14 +89,38 @@ export class Fighter {
     }
   }
 
-  /** A short white flash: the fighter was hit. */
-  flash() {
+  /** The fighter was hit (a white flash and a jolt), or blocked (a smaller jolt). */
+  struck(damage, blocked) {
+    this.recoil = blocked ? 0.04 : 0.04 + damage * 0.006;
+    if (blocked) return;
     this.flashLeft = FLASH_SECONDS;
     this.glowing = true;
   }
 }
 
 const FLASH_SECONDS = 0.1;
+/** Metres per second the jolt eases back in. */
+const RECOIL_EASE = 0.6;
+
+/** A soft dark disc on the floor under the fighter. */
+function shadow() {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext("2d");
+  const fade = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  fade.addColorStop(0, "rgba(0,0,0,0.6)");
+  fade.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = fade;
+  g.fillRect(0, 0, size, size);
+  const disc = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.7, 1.1), // narrow across the stage, long along the fighter's stance
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false }),
+  );
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.y = 0.005;
+  return disc;
+}
 
 /** Scales `model` to `height` metres tall in its first pose, its feet on the floor. */
 function fitHeight(model, height) {

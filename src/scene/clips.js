@@ -29,6 +29,15 @@ export const REACTIONS = {
 };
 
 /**
+ * The end of a round, played from `from` at the clip's own speed. The knockout's first second stands
+ * still: it starts where the fighter is thrown, so it lies on the floor 1.25 s later, within the pause.
+ */
+export const ENDS = {
+  ko: { clip: ANIMS.ko, from: 1.0 },
+  victory: { clip: ANIMS.victory, from: 0 },
+};
+
+/**
  * The walks loop at `rate` times their speed. The clips step slowly (about 35 cm a second); the engine
  * walks at 180 cm a second forward and 120 back, so they play faster, short of a jog.
  */

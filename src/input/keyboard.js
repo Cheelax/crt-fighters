@@ -16,11 +16,16 @@ export function keyButtons(down, player) {
   return held;
 }
 
-/** Tracks the keys held on `target`; `down` is the set of codes held right now. */
+/**
+ * Tracks the keys on `target`: `down` is the set of codes held right now, `taps` the codes pressed since
+ * the controls last read them, held or already released.
+ */
 export function createKeyboard(target = window) {
   const down = new Set();
+  const taps = new Set();
   const press = (e) => {
     if (e.code in KEYS || e.code === "Space") e.preventDefault(); // the arrows and the numpad never scroll the page
+    if (!e.repeat) taps.add(e.code);
     down.add(e.code);
   };
   const release = (e) => down.delete(e.code);
@@ -30,6 +35,7 @@ export function createKeyboard(target = window) {
   target.addEventListener("blur", clear);
   return {
     down,
+    taps,
     dispose() {
       target.removeEventListener("keydown", press);
       target.removeEventListener("keyup", release);
