@@ -170,12 +170,19 @@ export function createCamera() {
       shake = 0.18;
       strength = Math.max(strength, s);
     },
-    /** Frames both fighters, at x1 and x2 metres, `dt` seconds after the last call. */
-    follow(x1, x2, dt, snap = false) {
-      const mid = (x1 + x2) / 2;
+    /**
+     * Frames both fighters, at x1 and x2 metres, `dt` seconds after the last call. `snap` jumps there at
+     * once; `focus` (metres) closes in on a knocked-out fighter.
+     */
+    follow(x1, x2, dt, { snap = false, focus = null } = {}) {
+      let mid = (x1 + x2) / 2;
       const spread = Math.abs(x2 - x1);
       const fit = (spread / 2 + 1.1) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.max(camera.aspect, 0.6);
-      const distance = Math.max(4.8, fit);
+      let distance = Math.max(4.8, fit);
+      if (focus !== null) {
+        mid += (focus - mid) * 0.4;
+        distance *= 0.82;
+      }
       goal.set(mid * 0.92, 1.05 + distance * 0.04, distance);
       const ease = snap ? 1 : 1 - Math.exp(-dt * 6);
       camera.position.lerp(goal, ease);

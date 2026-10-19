@@ -53,6 +53,7 @@
   opacity: 0; transition: opacity 0.2s;
 }
 .toast.shown { opacity: 1; }
+.stats { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); pointer-events: none; font: 11px ui-monospace, monospace; color: rgba(220, 214, 245, 0.45); }
 .help {
   position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; pointer-events: none; font: 12px ui-monospace, monospace;
   color: rgba(220, 214, 245, 0.6);

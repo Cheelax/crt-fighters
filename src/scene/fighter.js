@@ -39,7 +39,7 @@ export class Fighter {
         // The TV's screen glows: round 2 shows the player's NFT on it.
         m.emissive = new THREE.Color(0xffffff);
         m.emissiveMap = m.map;
-        m.emissiveIntensity = 0.9;
+        m.emissiveIntensity = 0.5;
       } else {
         this.materials.push(m);
       }
@@ -47,6 +47,9 @@ export class Fighter {
     this.flashLeft = 0;
     this.recoil = 0;
     this.root.add(shadow());
+    this.guard = guardShield(player);
+    this.root.add(this.guard);
+    this.guardFlash = 0;
 
     this.mixer = new THREE.AnimationMixer(this.model);
     this.actions = {};
@@ -59,9 +62,16 @@ export class Fighter {
     fitHeight(this.model, HEIGHT);
   }
 
-  /** Shows `pose` (from poseOf) at engine position `x`, `dt` seconds after the last call. */
-  update(pose, x, dt) {
+  /**
+   * Shows `pose` (from poseOf) at engine position `x`, `dt` seconds after the last call; `guarding` when
+   * the fighter blocks (holding back, free) or is in a block's stun.
+   */
+  update(pose, x, dt, guarding = false) {
     this.root.position.x = x * UNIT;
+    this.guardFlash = Math.max(0, this.guardFlash - dt * 4);
+    const shield = Math.max(guarding ? 0.22 : 0, this.guardFlash);
+    this.guard.visible = shield > 0;
+    this.guard.material.opacity = shield;
     const action = this.actions[pose.clip];
     if (action && action !== this.current) {
       action.reset();
@@ -92,7 +102,10 @@ export class Fighter {
   /** The fighter was hit (a white flash and a jolt), or blocked (a smaller jolt). */
   struck(damage, blocked) {
     this.recoil = blocked ? 0.04 : 0.04 + damage * 0.006;
-    if (blocked) return;
+    if (blocked) {
+      this.guardFlash = 0.95;
+      return;
+    }
     this.flashLeft = FLASH_SECONDS;
     this.glowing = true;
   }
@@ -101,6 +114,21 @@ export class Fighter {
 const FLASH_SECONDS = 0.1;
 /** Metres per second the jolt eases back in. */
 const RECOIL_EASE = 0.6;
+
+/**
+ * A hexagon of light in front of a blocking fighter, turned to the camera: faint while it holds back,
+ * bright when it stops a blow.
+ */
+function guardShield(player) {
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.2, 0.27, 6),
+    new THREE.MeshBasicMaterial({ color: 0x5fe6ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+  );
+  ring.position.set(0, 0.85, 0.3); // the root faces its opponent along +z
+  ring.rotation.y = player === "p1" ? -Math.PI / 2 : Math.PI / 2; // undoes the root's turn: faces the camera
+  ring.visible = false;
+  return ring;
+}
 
 /** A soft dark disc on the floor under the fighter. */
 function shadow() {

@@ -34,7 +34,8 @@ export function createHud(root = document.body) {
   const toast = el("div", "toast");
   const curtain = el("div", "curtain"); // hides the fighters' return to their marks between rounds
   const crt = el("div", "crt"); // scanlines and a vignette over the whole picture
-  root.append(curtain, crt, hud, banner, help, toast);
+  const stats = el("div", "stats");
+  root.append(curtain, crt, hud, banner, help, toast, stats);
   let toastTimer = 0;
   const devices = { p1: "", p2: "" };
 
@@ -65,6 +66,10 @@ export function createHud(root = document.body) {
       for (const p of ["p1", "p2"]) {
         if (devices[p] !== d[p]) sides[p].device.textContent = devices[p] = d[p];
       }
+    },
+    /** The renderer and the frame rate, in a corner. */
+    stats(text) {
+      stats.textContent = text;
     },
     /** A short note at the bottom of the screen. */
     toast(text) {

@@ -26,6 +26,11 @@ export function padButtons(pad, player) {
   return held;
 }
 
+/** A short rumble, `strength` from 0 to 1, on gamepads that have one. */
+export function rumble(pad, strength, ms = 90) {
+  pad?.vibrationActuator?.playEffect?.("dual-rumble", { duration: ms, strongMagnitude: strength, weakMagnitude: strength / 2 })?.catch?.(() => {});
+}
+
 /** The two players' gamepads right now: polled, as the Gamepad API wants, on every frame. */
 export function readPads() {
   const pads = navigator.getGamepads?.() ?? [];
